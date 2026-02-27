@@ -36,12 +36,16 @@ namespace fNbt {
         // Swap is only needed if endianness of the runtime differs from desired NBT stream
         readonly bool swapNeeded;
 
+        // Let use varint encoding
+        readonly bool useVarInt;
 
-        public NbtBinaryWriter(Stream input, bool bigEndian) {
+
+        public NbtBinaryWriter(Stream input, bool bigEndian, bool varInt = false) {
             if (input == null) throw new ArgumentNullException(nameof(input));
             if (!input.CanWrite) throw new ArgumentException("Given stream must be writable", nameof(input));
             stream = input;
             swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
+            useVarInt = varInt;
         }
 
 
@@ -167,7 +171,11 @@ namespace fNbt {
 
             // Write out string length (as number of bytes)
             int numBytes = Encoding.GetByteCount(value);
-            Write((short)numBytes);
+            if (useVarInt) {
+                Write((byte)numBytes);
+            } else {
+                Write((short)numBytes);
+            }
 
             if (numBytes <= BufferSize) {
                 // If the string fits entirely in the buffer, encode and write it as one
@@ -204,6 +212,22 @@ namespace fNbt {
                 stream.Write(data, offset + written, toWrite);
                 written += toWrite;
             }
+        }
+
+        public void WriteVarInt(int value) {
+            uint uValue = (uint)value;
+
+            do {
+                byte data = (byte)(uValue & 0b0111_1111);
+                uValue >>= 7;
+
+                if (uValue != 0) {
+                    data |= 0b1000_0000;
+                }
+
+                stream.WriteByte(data);
+
+            } while (uValue != 0);
         }
     }
 }

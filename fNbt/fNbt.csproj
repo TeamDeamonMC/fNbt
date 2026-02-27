@@ -11,13 +11,15 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Authors>Erik Davidson (2010-2011); Matvei Stefarov (2012+)</Authors>
-    <Description>A library for working with NBT files and streams.</Description>
+    <Description>A library for working with NBT files and streams with VarInt support for Minecraft: Bedrock Edition.</Description>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/mstefarov/fNbt</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/TeamDeamonMC/fNbt</PackageProjectUrl>
     <PackageReadmeFile>docs\README.md</PackageReadmeFile>
     <PackageTags>nbt;serialization;minecraft;fcraft</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageIcon>icon.png</PackageIcon>
+    <PackageId>DaemonMC-$(AssemblyName)</PackageId>
+    <VersionPrefix>1.0.0.1</VersionPrefix>
     
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

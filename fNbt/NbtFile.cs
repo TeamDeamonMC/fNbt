@@ -39,6 +39,10 @@ namespace fNbt {
         /// <summary> Whether this file should read/write tags in big-endian encoding format. </summary>
         public bool BigEndian { get; set; }
 
+
+        /// <summary> Whether this file should read/write tags in VarInt encoding format. </summary>
+        public bool UseVarInt { get; set; }
+
         /// <summary> Gets or sets the default value of <c>BufferSize</c> property. Default is 8192. 
         /// Set to 0 to disable buffering by default. </summary>
         /// <exception cref="ArgumentOutOfRangeException"> value is negative. </exception>
@@ -344,7 +348,7 @@ namespace fNbt {
             if (firstByte != (int)NbtTagType.Compound) {
                 throw new NbtFormatException("Given NBT stream does not start with a TAG_Compound");
             }
-            var reader = new NbtBinaryReader(stream, BigEndian) {
+            var reader = new NbtBinaryReader(stream, BigEndian, UseVarInt) {
                 Selector = tagSelector
             };
 
@@ -470,7 +474,7 @@ namespace fNbt {
                     int checksum;
                     using (var compressStream = new ZLibStream(stream, CompressionMode.Compress, true)) {
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian));
+                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian, UseVarInt));
                         bufferedStream.Flush();
                         checksum = compressStream.Checksum;
                     }
@@ -486,13 +490,13 @@ namespace fNbt {
                     using (var compressStream = new GZipStream(stream, CompressionMode.Compress, true)) {
                         // use a buffered stream to avoid GZipping in small increments (which has a lot of overhead)
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian));
+                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian, UseVarInt));
                         bufferedStream.Flush();
                     }
                     break;
 
                 case NbtCompression.None:
-                    var writer = new NbtBinaryWriter(stream, BigEndian);
+                    var writer = new NbtBinaryWriter(stream, BigEndian, UseVarInt);
                     RootTag.WriteTag(writer);
                     break;
 

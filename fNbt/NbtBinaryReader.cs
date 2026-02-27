@@ -12,12 +12,14 @@ namespace fNbt {
         byte[]? seekBuffer;
         const int SeekBufferSize = 8 * 1024;
         readonly bool swapNeeded;
+        readonly bool useVarInt;
         readonly byte[] stringConversionBuffer = new byte[64];
 
 
-        public NbtBinaryReader(Stream input, bool bigEndian)
+        public NbtBinaryReader(Stream input, bool bigEndian, bool varInt = false)
             : base(input) {
             swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
+            useVarInt = varInt;
         }
 
 
@@ -42,10 +44,17 @@ namespace fNbt {
 
 
         public override int ReadInt32() {
-            if (swapNeeded) {
-                return Swap(base.ReadInt32());
+            int value = 0;
+            if (useVarInt) {
+                value = ReadVarInt();
             } else {
-                return base.ReadInt32();
+                value = base.ReadInt32();
+            }
+
+            if (swapNeeded) {
+                return Swap(value);
+            } else {
+                return value;
             }
         }
 
@@ -81,7 +90,12 @@ namespace fNbt {
 
 
         public override string ReadString() {
-            short length = ReadInt16();
+            short length = 0;
+            if (useVarInt) {
+                length = ReadByte();
+            } else {
+                length = ReadInt16();
+            }
             if (length < 0) {
                 throw new NbtFormatException("Negative string length given!");
             }
@@ -103,6 +117,33 @@ namespace fNbt {
                 }
                 return Encoding.UTF8.GetString(stringData);
             }
+        }
+
+        public int ReadVarInt() {
+            int numRead = 0;
+            int result = 0;
+            byte read;
+
+            do {
+                int current = BaseStream.ReadByte();
+                if (current == -1) {
+                    throw new EndOfStreamException();
+                }
+
+                read = (byte)current;
+
+                int value = (read & 0b0111_1111);
+                result |= (value << (7 * numRead));
+
+                numRead++;
+
+                if (numRead > 5) {
+                    throw new FormatException("VarInt is too big");
+                }
+            }
+            while ((read & 0b1000_0000) != 0);
+
+            return result;
         }
 
 
@@ -137,7 +178,12 @@ namespace fNbt {
 
 
         public void SkipString() {
-            short length = ReadInt16();
+            short length = 0;
+            if (useVarInt) {
+                length = ReadByte();
+            } else {
+                length = ReadInt16();
+            }
             if (length < 0) {
                 throw new NbtFormatException("Negative string length given!");
             }
