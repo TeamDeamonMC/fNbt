@@ -172,7 +172,7 @@ namespace fNbt {
             // Write out string length (as number of bytes)
             int numBytes = Encoding.GetByteCount(value);
             if (useVarInt) {
-                Write((byte)numBytes);
+                WriteUnsingedVarInt((uint)numBytes);
             } else {
                 Write((short)numBytes);
             }
