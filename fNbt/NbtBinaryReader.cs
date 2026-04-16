@@ -44,16 +44,13 @@ namespace fNbt {
 
 
         public override int ReadInt32() {
-            int value = 0;
             if (useVarInt) {
-                value = ReadVarInt();
+                return ReadSingedVarInt();
             } else {
-                value = base.ReadInt32();
-            }
-
-            if (swapNeeded) {
-                return Swap(value);
-            } else {
+                int value = base.ReadInt32();
+                if (swapNeeded) {
+                    return Swap(value);
+                }
                 return value;
             }
         }
@@ -90,9 +87,9 @@ namespace fNbt {
 
 
         public override string ReadString() {
-            short length = 0;
+            int length = 0;
             if (useVarInt) {
-                length = ReadByte();
+                length = (int)ReadUnsignedVarInt();
             } else {
                 length = ReadInt16();
             }
@@ -119,9 +116,14 @@ namespace fNbt {
             }
         }
 
-        public int ReadVarInt() {
+        public int ReadSingedVarInt() {
+            uint value = (uint)ReadUnsignedVarInt();
+            return (int)(value >> 1) ^ -(int)(value & 1);
+        }
+
+        public uint ReadUnsignedVarInt() {
             int numRead = 0;
-            int result = 0;
+            uint result = 0;
             byte read;
 
             do {
@@ -132,7 +134,7 @@ namespace fNbt {
 
                 read = (byte)current;
 
-                int value = (read & 0b0111_1111);
+                uint value = (uint)(read & 0x7F);
                 result |= (value << (7 * numRead));
 
                 numRead++;
@@ -141,7 +143,7 @@ namespace fNbt {
                     throw new FormatException("VarInt is too big");
                 }
             }
-            while ((read & 0b1000_0000) != 0);
+            while ((read & 0x80) != 0);
 
             return result;
         }

@@ -214,20 +214,19 @@ namespace fNbt {
             }
         }
 
-        public void WriteVarInt(int value) {
-            uint uValue = (uint)value;
+        public void WriteUnsingedVarInt(uint value) {
 
             do {
-                byte data = (byte)(uValue & 0b0111_1111);
-                uValue >>= 7;
+                byte data = (byte)(value & 0x7F);
+                value >>= 7;
 
-                if (uValue != 0) {
-                    data |= 0b1000_0000;
+                if (value != 0) {
+                    data |= 0x80;
                 }
 
                 stream.WriteByte(data);
 
-            } while (uValue != 0);
+            } while (value != 0);
         }
     }
 }
