@@ -74,46 +74,54 @@ namespace fNbt {
 
 
         public void Write(int value) {
-            unchecked {
-                if (swapNeeded) {
-                    buffer[0] = (byte)(value >> 24);
-                    buffer[1] = (byte)(value >> 16);
-                    buffer[2] = (byte)(value >> 8);
-                    buffer[3] = (byte)value;
-                } else {
-                    buffer[0] = (byte)value;
-                    buffer[1] = (byte)(value >> 8);
-                    buffer[2] = (byte)(value >> 16);
-                    buffer[3] = (byte)(value >> 24);
+            if (useVarInt) {
+                WriteSignedVarInt(value);
+            } else {
+                unchecked {
+                    if (swapNeeded) {
+                        buffer[0] = (byte)(value >> 24);
+                        buffer[1] = (byte)(value >> 16);
+                        buffer[2] = (byte)(value >> 8);
+                        buffer[3] = (byte)value;
+                    } else {
+                        buffer[0] = (byte)value;
+                        buffer[1] = (byte)(value >> 8);
+                        buffer[2] = (byte)(value >> 16);
+                        buffer[3] = (byte)(value >> 24);
+                    }
                 }
+                stream.Write(buffer, 0, 4);
             }
-            stream.Write(buffer, 0, 4);
         }
 
 
         public void Write(long value) {
-            unchecked {
-                if (swapNeeded) {
-                    buffer[0] = (byte)(value >> 56);
-                    buffer[1] = (byte)(value >> 48);
-                    buffer[2] = (byte)(value >> 40);
-                    buffer[3] = (byte)(value >> 32);
-                    buffer[4] = (byte)(value >> 24);
-                    buffer[5] = (byte)(value >> 16);
-                    buffer[6] = (byte)(value >> 8);
-                    buffer[7] = (byte)value;
-                } else {
-                    buffer[0] = (byte)value;
-                    buffer[1] = (byte)(value >> 8);
-                    buffer[2] = (byte)(value >> 16);
-                    buffer[3] = (byte)(value >> 24);
-                    buffer[4] = (byte)(value >> 32);
-                    buffer[5] = (byte)(value >> 40);
-                    buffer[6] = (byte)(value >> 48);
-                    buffer[7] = (byte)(value >> 56);
+            if (useVarInt) {
+                WriteSignedVarLong(value);
+            } else {
+                unchecked {
+                    if (swapNeeded) {
+                        buffer[0] = (byte)(value >> 56);
+                        buffer[1] = (byte)(value >> 48);
+                        buffer[2] = (byte)(value >> 40);
+                        buffer[3] = (byte)(value >> 32);
+                        buffer[4] = (byte)(value >> 24);
+                        buffer[5] = (byte)(value >> 16);
+                        buffer[6] = (byte)(value >> 8);
+                        buffer[7] = (byte)value;
+                    } else {
+                        buffer[0] = (byte)value;
+                        buffer[1] = (byte)(value >> 8);
+                        buffer[2] = (byte)(value >> 16);
+                        buffer[3] = (byte)(value >> 24);
+                        buffer[4] = (byte)(value >> 32);
+                        buffer[5] = (byte)(value >> 40);
+                        buffer[6] = (byte)(value >> 48);
+                        buffer[7] = (byte)(value >> 56);
+                    }
                 }
+                stream.Write(buffer, 0, 8);
             }
-            stream.Write(buffer, 0, 8);
         }
 
 
@@ -172,7 +180,7 @@ namespace fNbt {
             // Write out string length (as number of bytes)
             int numBytes = Encoding.GetByteCount(value);
             if (useVarInt) {
-                WriteUnsingedVarInt((uint)numBytes);
+                WriteUnsignedVarInt((uint)numBytes);
             } else {
                 Write((short)numBytes);
             }
@@ -214,7 +222,12 @@ namespace fNbt {
             }
         }
 
-        public void WriteUnsingedVarInt(uint value) {
+        public void WriteSignedVarInt(int value) {
+            uint zigzag = (uint)((value << 1) ^ (value >> 31));
+            WriteUnsignedVarInt(zigzag);
+        }
+
+        public void WriteUnsignedVarInt(uint value) {
 
             do {
                 byte data = (byte)(value & 0x7F);
@@ -227,6 +240,24 @@ namespace fNbt {
                 stream.WriteByte(data);
 
             } while (value != 0);
+        }
+
+        public void WriteSignedVarLong(long value) {
+            ulong zigzag = (ulong)((value << 1) ^ (value >> 63));
+            WriteUnsignedVarLong(zigzag);
+        }
+
+        public void WriteUnsignedVarLong(ulong value) {
+            do {
+                byte data = (byte)(value & 0x7FUL);
+                value >>= 7;
+
+                if (value != 0)
+                    data |= 0x80;
+
+                stream.WriteByte(data);
+            }
+            while (value != 0);
         }
     }
 }

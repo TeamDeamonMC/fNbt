@@ -19,7 +19,7 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageIcon>icon.png</PackageIcon>
     <PackageId>DaemonMC-$(AssemblyName)</PackageId>
-    <VersionPrefix>1.0.0.2</VersionPrefix>
+    <VersionPrefix>1.0.0.3</VersionPrefix>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     
   </PropertyGroup>
